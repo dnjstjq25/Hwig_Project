@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hwig.admin.mappers.sellerMapper">
+
+	<sql id="search">
+		<if test="searchType != null">
+			<if test="searchType == 'cname'.toString()">
+				and sel_cname like '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'id'.toString()">
+				and sel_id like '%' || #{keyword} || '%'
+			</if>
+		</if>
+	</sql>
+
+	<insert id="sellerInsert">
+		insert into tbl_seller (
+			sel_id,
+			sel_pw,
+			sel_cname,
+			sel_name,
+			sel_addr,
+			sel_tel,
+			sel_img)
+		values (
+			#{sel_id},
+			#{sel_pw},
+			#{sel_cname},
+			#{sel_name},
+			#{sel_addr},
+			#{sel_tel},
+			#{sel_img})
+	</insert>
+
+	<select id="sellerSelect" resultType="SellerVO">
+		select * from tbl_seller where sel_id = #{sel_id}
+		<!-- <if test="sel_pw != null and sel_pw != ''"> and sel_pw = #{sel_pw} 
+			</if> -->
+	</select>
+
+	<update id="sellerUpdate">
+		update tbl_seller set
+			sel_name = #{sel_name},
+			sel_pw = #{sel_pw},
+			sel_tel = #{sel_tel},
+			sel_img = #{sel_img}
+			<if test="sel_addr != null">
+				, sel_addr = #{sel_addr}
+			</if>
+		where sel_id = #{sel_id}
+	</update>
+
+	<update id="sellerImgUpdate">
+		update tbl_seller set sel_img = #{sel_img} where sel_id = #{sel_id}
+	</update>
+
+	<select id="sellerAllSelect" resultType="SellerVO">
+		select * from (
+			select
+				sel_id,
+				sel_pw,
+				sel_cname,
+				sel_name,
+				sel_addr,
+				sel_tel,
+				row_number() over(order by sel_cname asc) as rnum
+			from tbl_seller where 1=1
+		<include refid="search"></include>
+		) mb where rnum between #{pageStart} and #{pageEnd}
+	</select>
+
+	<select id="sellerAllCount" resultType="int">
+		select count(sel_id) from tbl_seller where 1=1
+		<include refid="search"></include>
+	</select>
+
+	<update id="sellerPwUpdate">
+		update tbl_seller set sel_pw = #{sel_pw} where sel_id = #{sel_id}
+	</update>
+	
+	<sql id="sellerSearch">
+		<if test="searchType != null">
+			<if test="searchType == 'prdid'.toString()">
+				and prd_id like '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'prdname'.toString()">
+				and prd_name like '%' || #{keyword} || '%'
+			</if>
+		</if>
+	</sql>
+	
+	<select id="stockPrds" resultType="StockPrdsVO">
+		select * from(
+			select
+				prd_id,
+				prd_name,
+				prd_stock,
+				prd_price,
+				prd_from,
+				prd_info,
+				to_char(prd_date,'YYYY-MM-DD') as prd_date,
+				row_number() over(order by prd_stock desc) as rnum
+			from
+				tbl_prd
+			where
+				sel_id = #{sel_id}
+			<include refid="sellerSearch"></include>
+		) mb where rnum between #{pageStart} and #{pageEnd}
+	</select>
+	
+	<select id="stockPrdsCount" resultType="int">
+		select
+			count(*)
+		from
+			tbl_prd
+		where
+			sel_id = #{sel_id}
+			<include refid="sellerSearch"></include>
+	</select>
+
+</mapper>

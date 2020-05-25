@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hwig.admin.mappers.replyMapper">
+
+	<!-- 답글 조회 -->
+	<select id="reply_view" resultType="com.hwig.admin.reply.ReplyVO">
+		select reply_id, reply_content, reply_regdate
+		from tbl_reply
+		where qna_id = #{qna_id}
+	</select>
+	
+	<!-- 답글 목록(메인용) -->
+	<select id="rList" parameterType="String" resultType="com.hwig.admin.reply.QReplyVO">
+		select q.*, r.reply_content, r.reply_regdate from tbl_qna q, tbl_reply r
+		where q.mem_id = #{mem_id} and q.qna_id = r.qna_id(+) order by q.qna_regdate
+	</select>
+	
+	<!-- 답글 작성 -->
+	<insert id="reply_write">
+		insert into tbl_reply(qna_id, reply_id, reply_content)
+		values(#{qna_id}, seq_reply.nextval, #{reply_content})
+	</insert>
+	
+	<!-- 답글 수정 -->
+	<update id="reply_modify">
+		update tbl_reply set reply_content = #{reply_content}
+		where reply_id = #{reply_id}
+	</update>
+	
+	<!-- 답글 삭제 -->
+	<delete id="reply_delete">
+		delete from tbl_reply
+		where reply_id = #{reply_id}
+	</delete>
+	
+	<!-- 답글 머리말, 꼬리말 매크로  -->
+	<select id="macro_view" resultType="com.hwig.admin.reply.MacroVO">
+		select * from tbl_macro where qna_category = #{qna_category}
+	</select>
+	
+	<!-- 답글 머리말, 꼬리말 목록 -->
+	<select id="macro_ht_list" resultType="com.hwig.admin.reply.MacroVO">
+		select * from tbl_macro
+	</select>
+	<!-- 답글 본문 매크로 버튼 리스트 -->
+	<select id="macro_c_list" resultType="com.hwig.admin.reply.MacroVO">
+		select * from tbl_macro_c where qna_category = #{qna_category}
+	</select>
+	
+	<!-- 답글 본문 매크로 목록 -->
+	<select id="macro_list" resultType="com.hwig.admin.reply.MacroVO">
+		select * from tbl_macro_c
+	</select>
+	
+	<!-- 본문 양식 1개만 가져올 때 -->
+	<select id="macro_c_view" resultType="com.hwig.admin.reply.MacroVO">
+		select * from tbl_macro_c where macro_c_id = #{macro_c_id}
+	</select>
+	
+	<!-- 매크로 머리,꼬리 수정 -->
+	<update id="macro_ht_mod" parameterType="com.hwig.admin.reply.MacroVO">
+		update tbl_macro set
+		macro_head = #{macro_head},
+		macro_tail = #{macro_tail}
+		where qna_category = #{qna_category}
+	</update>
+	
+	<!-- 매크로 본문 양식 추가 -->
+	<insert id="macro_write" parameterType="com.hwig.admin.reply.MacroVO">
+		insert into tbl_macro_c 
+		values((select nvl(max(macro_c_id)+1,1) from tbl_macro_c), #{macro_content}, #{qna_category}, #{macro_link})
+	</insert>
+	
+	<!-- 매크로 본문 양식 수정 -->
+	<update id="macro_modify" parameterType="com.hwig.admin.reply.MacroVO">
+		update tbl_macro_c set
+		macro_content = #{macro_content},
+		macro_link = #{macro_link}
+		where macro_c_id = #{macro_c_id}
+	</update>
+	
+	<!-- 본문 양식 삭제 -->
+	<delete id="macro_delete" parameterType="int">
+		delete from tbl_macro_c where macro_c_id = #{macro_c_id}
+	</delete>
+	
+	<!-- 삭제시 번호 순번 하나씩 땡김 -->
+	<update id="macro_id_d" parameterType="com.hwig.admin.reply.MacroVO">
+		update tbl_macro_c set macro_c_id = macro_c_id - 1 where macro_c_id > #{macro_c_id}
+	</update>
+</mapper>

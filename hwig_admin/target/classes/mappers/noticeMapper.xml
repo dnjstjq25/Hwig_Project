@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hwig.admin.mappers.noticeMapper">
+	
+	<!-- 검색 -->
+	<sql id="search">
+		<if test="searchType != null">
+			<if test="searchType == 'subject'.toString()">
+				where notice_subject like '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'content'.toString()">
+				where notice_content like '%' || #{keyword} || '%'
+			</if>
+		</if>
+	</sql>
+	
+	<!-- 목록 전체 개수 -->
+	<select id="listCount" resultType="int">
+			select count(notice_id) from tbl_notice 
+		<include refid="search"></include>
+	</select>
+	
+	<!-- 공지사항 목록(관리자페이지) -->
+	<select id="nList" resultType="com.hwig.admin.notice.NoticeVO">
+		select * from (select row_number() over(order by notice_id desc) as rnum, a.* from tbl_notice a
+		<include  refid="search"></include>
+		)
+		where rnum between #{pageStart} and #{pageEnd} 
+	</select>
+	
+	<!-- 공지사항 목룍(메인 페이지) -->
+	<select id="nlist_main" resultType="com.hwig.admin.notice.NoticeVO">
+		select * from tbl_notice
+	</select>
+	
+	
+	<!-- 공지사항 등록 -->
+	<insert id="notice_write" parameterType="com.hwig.admin.notice.NoticeVO">
+		insert into tbl_notice(notice_id, notice_subject, notice_content)
+		values((select nvl(max(notice_id)+1,1) from tbl_notice), #{notice_subject}, #{notice_content})
+	</insert>
+	
+	<!-- 공지사항 조회 -->
+	<select id="notice_view" resultType="com.hwig.admin.notice.NoticeVO" parameterType="int">
+		select * from tbl_notice where notice_id = #{notice_id}
+	</select>
+	
+	<!-- 공지사항 조회수 증가 -->
+	<update id="notice_hit_up" parameterType="com.hwig.admin.notice.NoticeVO">
+		update tbl_notice
+		set notice_hit = notice_hit + 1
+		where notice_id = #{notice_id}
+	</update>
+	
+	<!-- 공지사항 수정 -->
+	<update id="notice_modify" parameterType="com.hwig.admin.notice.NoticeVO">
+		update tbl_notice
+		set notice_subject = #{notice_subject},
+			notice_content = #{notice_content}
+		where notice_id = #{notice_id}
+	</update>
+	
+	<!-- 공지사항 삭제 -->
+	<delete id="notice_delete" parameterType="int">
+		delete from tbl_notice where notice_id = #{notice_id}
+	</delete>
+	
+	<!-- 공지사항 삭제시 번호 하나씩 땡김 -->
+	<update id="notice_id_d" parameterType="com.hwig.admin.notice.NoticeVO">
+		update tbl_notice set notice_id = notice_id - 1 where notice_id > #{notice_id}
+	</update>
+	
+</mapper>

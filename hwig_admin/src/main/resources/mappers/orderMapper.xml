@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hwig.admin.mappers.orderMapper">
+
+	<sql id="search">
+		<if test="searchType != null">
+			<if test="searchType == 'orderid'.toString()">
+				and order_id like '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'memid'.toString()">
+				and mem_id like '%' || #{keyword} || '%'
+			</if>
+		</if>
+	</sql>
+	
+	<select id="orderAllSelectSeller" resultType="OrderVO">
+		select * from (
+			select
+				A.order_id,
+				A.mem_id,
+				A.order_status,
+				A.order_reverse,
+				A.order_paymoney,
+				A.order_payway,
+				to_char(A.order_paydate,'YYYY-MM-DD')as order_paydate,
+				A.order_request,
+				row_number() over(order by A.order_status desc, A.order_paydate desc) as rnum
+			from
+				tbl_order A,
+				tbl_order_b B,
+				tbl_prd C
+			where A.order_id = B.order_id
+				and B.prd_id = C.prd_id
+			<if test="sel_id != null and sel_id !=''">
+					and C.sel_id = #{sel_id}
+			</if>
+		<include refid="search"></include>
+		) mb where rnum between #{pageStart} and #{pageEnd}
+	</select>
+
+	<select id="orderAllCountSeller" resultType="int">
+		select
+			count(A.order_id)
+		from tbl_order A,
+			tbl_order_b B,
+			tbl_prd C
+		where A.order_id = B.order_id
+			and B.prd_id = C.prd_id
+		<if test="sel_id != null and sel_id !=''">
+			and C.sel_id = #{sel_id}
+		</if>
+		<include refid="search"></include>
+	</select>
+
+	<select id="orderAllSelectAdmin" resultType="OrderVO">
+		select * from (
+			select
+				order_id,
+				mem_id,
+				order_status,
+				order_reverse,
+				order_paymoney,
+				order_payway,
+				to_char(order_paydate,'YYYY-MM-DD hh24:mi:ss')as order_paydate,
+				order_request,
+				row_number() over(order by order_status desc, order_paydate desc) as rnum
+			from
+				tbl_order
+			where 1=1
+
+		<include refid="search"></include>
+
+		) mb where rnum between #{pageStart} and #{pageEnd}
+	</select>
+
+	<select id="orderAllCountAdmin" resultType="int">
+		select
+			count(order_id)
+		from tbl_order
+		where 1=1
+		<include refid="search"></include>
+	</select>
+
+	<select id="orderDetailSelect" resultType="OrderDetailDTO">
+		select
+			A.order_id,
+			A.mem_id,
+			A.order_status,
+			A.order_reverse,
+			A.order_paymoney,
+			A.order_payway,
+			to_char(A.order_paydate,'YYYY-MM-DD hh24:mi:ss')as order_paydate,
+			A.order_request,
+			(select B.mem_name from tbl_member B where A.mem_id = B.mem_id) as mem_name,
+			(select B.mem_tel from tbl_member B where A.mem_id = B.mem_id) as mem_tel,
+			F.order_receiver_addr
+		from
+			tbl_order A,
+			tbl_addr F
+		where A.order_id = F.order_id
+			and A.order_id = #{order_id}
+	</select>
+
+	<select id="orderDetailPrdSelect" resultType="OrderDetailPrdDTO">
+		select
+			A.order_id,
+			A.prd_id,
+			A.order_count,
+			B.prd_name,
+			B.prd_price,
+			C.sel_cname
+		from
+			tbl_order_b A,
+			tbl_prd B,
+			tbl_seller C
+		where A.prd_id = B.prd_id
+			and B.sel_id = C.sel_id
+			and A.order_id = #{order_id}
+		<if test="sel_id != null and sel_id !=''">
+			and C.sel_id = #{sel_id}
+		</if>
+	</select>
+
+	<insert id="orderInsert">
+		<selectKey resultType="string" keyProperty="order_id"
+			order="BEFORE">
+		<![CDATA[
+			select 
+				case when (select count(*) from tbl_order where to_char(order_paydate, 'YYYYMMDD') = to_char(sysdate, 'YYYYMMDD')) > 0   then 
+					((select to_char(sysdate, 'YYYYMMDD') from dual) || lpad((select count(*) from tbl_order where to_char(order_paydate, 'YYYYMMDD') = to_char(sysdate, 'YYYYMMDD')), 5, '0'))
+				else 
+					((select to_char(sysdate, 'YYYYMMDD') from dual) || lpad((select count(*) from tbl_order where to_char(order_paydate, 'YYYYMMDD') = to_char(sysdate, 'YYYYMMDD')), 5, '0'))
+				end  as order_id
+			from dual
+			]]>
+		</selectKey>
+		insert into tbl_order (
+			order_id,
+			mem_id,
+			order_reverse,
+			order_used_reverse,
+			order_paymoney,
+			order_payway,
+			order_request)
+		values (
+			#{order_id},
+			#{mem_id},
+			#{order_reverse},
+			#{order_used_reverse},
+			#{order_paymoney},
+			#{order_payway},
+			#{order_request})
+	</insert>
+
+	<insert id="orderBInsert">
+		insert into tbl_order_b (
+			order_id,
+			prd_id,
+			order_count)
+		values (
+			#{order_id},
+			#{prd_id},
+			#{order_count})
+	</insert>
+
+	<insert id="orderAddrInsert">
+		insert into tbl_addr (
+			order_id,
+			order_sender,
+			order_receiver,
+			order_receiver_tel,
+			order_receiver_addr)
+		values (
+			#{order_id},
+			#{order_sender},
+			#{order_receiver},
+			#{order_receiver_tel},
+			#{order_receiver_addr})
+	</insert>
+
+	<!-- 배송상태변경 -->
+	<update id="orderStatusUpdate">
+		update tbl_order set order_status = #{order_status} where order_id = #{order_id}
+	</update>
+	
+	<!-- 주문완료페이지 -->
+	<select id="orderCompletion" resultType="ApiOrderCompletionDTO">
+		select
+			A.order_id,
+			B.prd_name,
+			D.order_receiver_addr,
+			to_char(A.order_paydate,'YYYY-MM-DD hh24:mi:ss')as order_paydate,
+			A.order_payway,
+			A.order_paymoney
+		from
+			tbl_order A,
+			tbl_prd B,
+			tbl_order_b C,
+			tbl_addr D
+		where 
+            A.order_id = C.order_id
+			and B.prd_id = C.prd_id
+			and C.order_id = D.order_id
+			and rownum = 1
+			and A.order_id = #{order_id}
+			<!-- and order_paydate = (select max(order_paydate) from tbl_order where order_id=#{order_id}) -->
+	</select>
+	
+	<delete id="addrDelete">
+		delete from tbl_addr where order_id = #{order_id}
+	</delete>
+	
+	<delete id="orderBDelete">
+		delete from tbl_order_b where order_id = #{order_id}
+	</delete>
+	
+	<delete id="orderDelete">
+		delete from tbl_order where mem_id = #{mem_id}
+	</delete>
+	
+	<!-- 주문기본테이블 리뷰작성여부변경 -->
+	<update id="orderPrdReviewUpdate">
+		update tbl_order_b set order_prd_review = #{order_prd_review} where prd_id = #{prd_id}
+	</update>
+
+</mapper>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hwig.admin.mappers.faqMapper">
+	
+	<!-- 검색 -->
+	<sql id="search">
+		<if test="searchType != null">
+			<if test="searchType == 'category'.toString()">
+				where faq_category like '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'subject'.toString()">
+				where faq_subject like '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'content'.toString()">
+				where faq_content like '%' || #{keyword} || '%'
+			</if>
+		</if>
+	</sql>
+	
+	<!-- 목록 전체 개수 -->
+	<select id="listCount" resultType="int">
+			select count(faq_id) from tbl_faq 
+		<include refid="search"></include>
+	</select>
+	
+	<!-- 자주묻는질문 목록 -->
+	<select id="fList" resultType="com.hwig.admin.faq.FaqVO">
+		select * from (select row_number() over(order by faq_id desc) as rnum, a.* from tbl_faq a
+		<include  refid="search"></include>
+		)
+		where rnum between #{pageStart} and #{pageEnd}
+	</select>
+	
+	<!-- 자주묻는질문 목록_메인 -->
+	<select id="fList_main" resultType="com.hwig.admin.faq.FaqVO">
+		select * from tbl_faq
+	</select>
+	
+	<!-- 자주묻는질문 등록 -->
+	<insert id="faq_write" parameterType="com.hwig.admin.faq.FaqVO">
+		insert into tbl_faq values((select nvl(max(faq_id)+1,1) from tbl_faq), #{faq_category}, #{faq_subject}, #{faq_content})
+	</insert>
+	
+	<!-- 자주묻는질문 조회 -->
+	<select id="faq_view" resultType="com.hwig.admin.faq.FaqVO" parameterType="int">
+		select * from tbl_faq where faq_id = #{faq_id}
+	</select>
+	
+	<!-- 자주묻는질문 수정 -->
+	<update id="faq_modify" parameterType="com.hwig.admin.faq.FaqVO">
+		update tbl_faq
+		set faq_subject = #{faq_subject},
+			faq_category = #{faq_category},
+		    faq_content = #{faq_content}
+		where faq_id = #{faq_id}
+	</update>
+	
+	<!-- 자주묻는질문 삭제 -->
+	<delete id="faq_delete" parameterType="int">
+		delete from tbl_faq where faq_id = #{faq_id}
+	</delete>
+	
+	<!-- 자주묻는질문 삭제시 번호 순번 하나씩 땡김 -->
+	<update id="faq_id_d" parameterType="com.hwig.admin.faq.FaqVO">
+		update tbl_faq set faq_id = faq_id - 1 where faq_id > #{faq_id}
+	</update>
+</mapper>

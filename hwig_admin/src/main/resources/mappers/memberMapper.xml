@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hwig.admin.mappers.memberMapper">
+
+	<!-- 회원가입 -->
+	<insert id="memberInsert">
+		insert into tbl_member (
+			mem_id,
+			mem_pw,
+			mem_tel,
+			mem_name,
+			mem_addr,
+			mem_email,
+			mem_regdate)
+		values (
+			#{mem_id},
+			#{mem_pw},
+			#{mem_tel},
+			#{mem_name},
+			#{mem_addr},
+			#{mem_email},
+			sysdate)
+	</insert>
+
+	<sql id="search">
+		<if test="searchType != null">
+			<if test="searchType == 'id'.toString()">
+				and mem_id like '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'name'.toString()">
+				and mem_name like '%' || #{keyword} || '%'
+			</if>
+		</if>
+	</sql>
+
+	<!-- admin리스트 -->
+	<select id="memberAllSelect" resultType="MemberVO">
+		select * from (
+			select
+				mem_id,
+				mem_pw,
+				mem_tel,
+				mem_name,
+				mem_addr,
+				mem_email,
+				to_char(mem_regdate,'YYYY-MM-DD') as mem_regdate,
+				mem_grade,
+				mem_reverse,
+				row_number() over(order by mem_regdate desc) as rnum
+			from tbl_member where 1=1
+		<include refid="search"></include>
+			) mb
+		where rnum between #{pageStart} and #{pageEnd}
+	</select>
+
+	<select id="memberAllCount" resultType="int">
+		select count(mem_id) from tbl_member where 1=1
+		<include refid="search"></include>
+	</select>
+
+	<!-- 회원정보상세, 로그인시 사용 -->
+	<select id="memberSelect" resultType="MemberVO">
+		select
+			mem_id,
+			mem_pw,
+			mem_tel,
+			mem_name,
+			mem_addr,
+			mem_email,
+			to_char(mem_regdate,'YYYY-MM-DD') as mem_regdate,
+			mem_grade,
+			mem_reverse,
+			mem_price
+		from tbl_member where mem_id = #{mem_id}
+		<if test="mem_pw != null and mem_pw != ''">
+			and mem_pw = #{mem_pw}
+		</if>
+	</select>
+
+	<!-- 이메일 체크시 사용 -->
+	<select id="emailCheck" resultType="int">
+		select count(*) from tbl_member where mem_email = #{mem_email}
+	</select>
+
+	<!-- 아이디 체크시 사용 -->
+	<select id="idCheck" resultType="int">
+		select count(*) from tbl_member where mem_id = #{mem_id}
+	</select>
+
+	<!-- 회원정보수정 -->
+	<update id="memberUpdate">
+		update tbl_member set mem_tel = #{mem_tel}, mem_addr = #{mem_addr}, mem_email = #{mem_email}
+		<if test="mem_newpw != null and mem_newpw != ''">
+			,mem_pw = #{mem_newpw}
+		</if>
+		where mem_id = #{mem_id}
+	</update>
+
+	<!-- 주문한 리스트 -->
+	<select id="memberOrderSelectAll" resultType="ApiOrderListVO">
+		SELECT order_id, prd_id, prd_name, order_paydate, prd_thumb, order_paymoney, order_status
+		FROM
+		    (
+		        SELECT A.order_id, A.prd_id, C.prd_name, B.order_paydate, C.prd_thumb, B.order_paymoney, B.order_status,
+		               ROW_NUMBER() OVER (PARTITION BY A.order_id ORDER BY A.prd_id DESC) RN
+		        FROM   tbl_order_b A, tbl_order B, tbl_prd C
+		        where A.order_id = B.order_id and A.prd_id = C.prd_id and B.mem_id = #{mem_id}
+		    ) a
+		<![CDATA[
+		WHERE RN <= 1
+		]]>
+	</select>
+
+	<select id="memberOrderAllCount" resultType="int">
+		select
+			count(A.order_id)
+		from
+			tbl_order A,
+			tbl_member B
+		where A.mem_id = B.mem_id
+			and A.mem_id = #{mem_id}
+	</select>
+	
+	<!-- 주문상세 -->
+	<select id="memberOrderDetailSelectAll" resultType="ApiOrderDetailVO">
+		select
+			A.mem_id,
+		    A.order_id,
+		    D.prd_id,
+		    D.prd_name,
+		    D.prd_price,
+		    B.order_count,
+		    D.prd_thumb,
+		    A.order_paymoney,
+		    D.prd_sale,
+		    A.order_used_reverse,
+		    A.order_reverse,
+		    A.order_payway,
+		    C.order_sender,
+		    to_char(A.order_paydate,'YYYY-MM-DD hh24:mi:ss')as order_paydate,
+		    A.order_status,
+		    C.order_receiver,
+		    C.order_receiver_tel,
+		    C.order_receiver_addr,
+		    A.order_request
+		from
+		    tbl_order A,
+		    tbl_order_b B,
+		    tbl_addr C,
+		    tbl_prd D
+		where
+		    A.order_id = B.order_id
+		    and B.prd_id = D.prd_id
+		    and B.order_id = C.order_id
+		    and A.mem_id = #{mem_id}
+		    and A.order_id = #{order_id}
+	</select>
+	
+	<!-- 적립금 적립 -->
+	<update id="changeReverse">
+		update tbl_member set mem_reverse = #{mem_reverse} where mem_id = #{mem_id}
+	</update>
+	
+	<!-- 주문가격 적립 -->
+	<update id="changePrice">
+		update tbl_member set mem_price = #{mem_price} where mem_id = #{mem_id}
+	</update>
+	
+	<!-- 등급 변경 -->
+	<update id="changeGrade">
+		update tbl_member set mem_grade = #{mem_grade} where mem_id = #{mem_id}
+	</update>
+	
+	<!-- 비밀번호 분실시 아이디, 이름, 이메일 체크 -->
+	<select id="idNameEmailCheck" resultType="int">
+		select
+			count(*)
+		from
+			tbl_member
+		where
+			mem_id = #{mem_id}
+			and mem_name = #{mem_name}
+			and mem_email = #{mem_email}
+	</select>
+	
+	<!-- 분실한 이메일 초기화 -->
+	<update id="resetPw">
+		update tbl_member set mem_pw = #{mem_pw} where mem_id = #{mem_id}
+	</update>
+	
+	<!-- admin 주문한 상품 리스트 -->
+	<select id="memberOrderPrdSelect" resultType="MemberOrderPrdVO">
+	select * from (
+		select
+			D.prd_name,
+			D.prd_price,
+			C.order_count,
+			C.order_id,
+			row_number() over(order by C.order_id desc) as rnum
+		from
+			tbl_member A,
+			tbl_order B,
+			tbl_order_b C,
+			tbl_prd D
+		where
+			A.mem_id = B.mem_id
+			and B.order_id = C.order_id
+			and C.prd_id = D.prd_id
+			and A.mem_id = #{mem_id}
+			) mb
+		where rnum between #{prdPageStart} and #{prdPageEnd}
+	</select>
+	
+	<select id="memberOrderPrdCount" resultType="int">
+		select
+			count(*)
+		from
+			tbl_member A,
+			tbl_order B,
+			tbl_order_b C,
+			tbl_prd D
+		where
+			A.mem_id = B.mem_id
+			and B.order_id = C.order_id
+			and C.prd_id = D.prd_id
+			and A.mem_id = #{mem_id}
+	</select>
+	
+	<!-- 후기 작성 가능한 주문 상품 리스트 -->
+	<select id="memberReviewPrdSelect" resultType="ApiMemberReviewPrdVO">
+		select
+			to_char(A.order_paydate,'YYYY-MM-DD hh24:mi:ss')as order_paydate,
+		    C.prd_name,
+		    B.order_count,
+		    C.prd_thumb,
+		    C.prd_id,
+		    A.mem_id,
+		    B.order_prd_review
+		from
+		    tbl_order A,
+		    tbl_order_b B,
+		    tbl_prd C
+		where
+		    A.order_id = B.order_id
+		    and B.prd_id = C.prd_id
+		    and A.mem_id = #{mem_id}
+		    <if test="order_prd_review == 0">
+				and B.order_prd_review = 0
+				and A.order_status = '배송 완료'
+			</if>
+	</select>
+	
+	<!-- 회원탈퇴 -->
+	<delete id="memberDelete">
+		delete from tbl_member where mem_id = #{mem_id}
+	</delete>
+	
+	<!-- 회원탈퇴처리 전 배송상태조회 -->
+	<select id="memberOrders" resultType="MemberDeleteVO">
+		select
+			A.order_id,
+			A.order_status
+		from
+			tbl_order A,
+			tbl_member B
+		where
+			A.mem_id = B.mem_id
+			and A.mem_id = #{mem_id}
+	</select>
+	
+	<!-- admin 회원정보수정 -->
+	<update id="adminMemberUpdate">
+		update
+			tbl_member
+		set
+			mem_name = #{mem_name},
+			mem_email = #{mem_email},
+			mem_tel = #{mem_tel}
+			<if test="mem_addr != null">
+				, mem_addr = #{mem_addr}
+			</if>
+		where mem_id = #{mem_id}
+	</update>
+
+</mapper>

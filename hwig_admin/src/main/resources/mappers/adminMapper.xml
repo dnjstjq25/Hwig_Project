@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hwig.admin.mappers.adminMapper">
+	<!-- 관리자 로그인 -->
+	<select id="adminSelect" resultType="AdminVO">
+		select * from
+			tbl_admin
+		where
+			admin_id = #{admin_id} and admin_pw = #{admin_pw}
+	</select>
+	
+	<!-- 문의 수 -->
+	<select id="qna_count" resultType="int">
+		select count(qna_id) as qna_id
+		from tbl_qna
+	</select>
+	
+	<!-- 답변 수 -->
+	<select id="reply_count" resultType="int">
+		select count(reply_id) as reply_id
+		from tbl_reply
+	</select>
+	
+	<!-- 회원 수 -->
+	<select id="member_count" resultType="int">
+		select count(mem_id) as mem_id
+		from tbl_member
+	</select>
+	
+	<!-- 총 주문 가격 -->
+	<select id="order_paymoney" resultType="int">
+		select
+			sum(order_paymoney) as order_paymoney
+		from
+			tbl_order
+	</select>
+
+	<!-- 문의 목록 -->
+	<select id="qna_list" resultType="com.hwig.admin.qna.QnaVO">
+		select * from tbl_qna
+		where qna_id not in (select qna_id from tbl_reply)
+		<![CDATA[
+		and rownum <= 6
+		]]>
+		order by qna_regdate desc
+	</select>
+	
+	<!-- 주문 목록 -->
+	<select id="order_list" resultType="OrderListVO">
+		select
+			order_id,
+			mem_id,
+			order_paymoney,
+			order_status,
+			order_request,
+			to_char(order_paydate,'YYYY-MM-DD hh24:mi:ss')as order_paydate
+		from
+			tbl_order
+		<![CDATA[
+			where rownum <=5
+		]]>
+		order by
+			order_paydate desc
+	</select>
+	
+	<!-- 승인 요청 상품 목록 -->
+	<select id="prd_list" resultType="com.hwig.admin.product.ProductVO">
+		select prd_id, category_id, sel_id, prd_name
+		from tbl_prd_b
+		<![CDATA[
+		where rownum <=5
+		]]>
+		order by prd_id desc
+	</select>
+	
+	<!-- 동그라미 차트 -->
+	<select id="chart_circle" resultType="ChartVO">
+		select sum(o.order_paymoney) as order_paymoney, p.category_id as category_id
+		from tbl_order o, tbl_order_b ob, tbl_prd p
+		where o.order_id = ob.order_id and ob.prd_id = p.prd_id
+		group by p.category_id
+		order by p.category_id
+	</select>
+	
+	<!-- 여기부터 판매자 -->
+	<!-- 고객 후기 -->
+	<select id="review_list" resultType="ReviewListVO" parameterType="String">
+		select prd_name, review_subject, review_content, review_regdate, review_img
+		from tbl_prd p, tbl_review r
+		<![CDATA[
+		where p.prd_id = r.prd_id and p.sel_id = #{sel_id} and rownum <= 3
+		]]>
+		order by review_regdate desc
+	</select>
+	
+	<select id="sellerPrdsStock" resultType="ProductListVO">
+		select
+			prd_name,
+			prd_stock,
+			prd_price,
+			prd_from,
+			to_char(prd_date,'YYYY-MM-DD hh24:mi:ss') as prd_date
+		from
+			tbl_prd
+		where
+			sel_id = #{sel_id}
+			<![CDATA[
+				and prd_stock < 51
+				and rownum < 6
+			]]>
+	</select>
+	
+</mapper>

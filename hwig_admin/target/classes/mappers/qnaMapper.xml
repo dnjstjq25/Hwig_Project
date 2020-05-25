@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hwig.admin.mappers.qnaMapper">
+
+	<!-- 검색 -->
+	<sql id="search">
+		<if test="searchType != null">
+			<if test="searchType == 'category'.toString()">
+				where qna_category like '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'subject'.toString()">
+				where qna_subject like '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'content'.toString()">
+				where qna_content like '%' || #{keyword} || '%'
+			</if>
+		</if>
+	</sql>
+	
+	<!-- 목록 전체 개수 -->
+	<select id="listCount" resultType="int">
+			select count(qna_id) from tbl_qna
+		<include refid="search"></include>
+	</select>
+	
+	<!-- 문의 목록 -->
+	<select id="qList" resultType="com.hwig.admin.qna.QnaVO">
+		select q.*, r.reply_id as reply_id from (select row_number() over(order by qna_id desc) as rnum, a.* from tbl_qna a) q, tbl_reply r
+		<include  refid="search"></include>
+		where rnum between #{pageStart} and #{pageEnd} and q.qna_id = r.qna_id(+)
+	</select>
+	
+	<!-- 문의 목록(메인) -->
+	<select id="qList_main" resultType="com.hwig.admin.qna.QnaVO" parameterType="String">
+		select * from tbl_qna where mem_id = #{mem_id}
+	</select>
+	
+	<!-- 답변 매크로 리스트 같이 가져옴 -->
+	<select id="macro_all">
+		select * from tbl_macro
+	</select>
+	
+	<!-- 문의 등록 -->
+	<insert id="qna_write" parameterType="com.hwig.admin.qna.QnaVO">
+		insert into tbl_qna(qna_id, mem_id, qna_category, qna_subject, qna_content) values((select nvl(max(qna_id)+1,1) from tbl_qna), #{mem_id}, #{qna_category}, #{qna_subject}, #{qna_content})
+	</insert>
+	
+	<!-- 문의 조회 -->
+	<select id="qna_view" resultType="com.hwig.admin.qna.QnaVO" parameterType="int">
+		select * from tbl_qna where qna_id = #{qna_id}
+	</select>
+	
+	<!-- 문의 수정 -->
+	<update id="qna_modify" parameterType="com.hwig.admin.qna.QnaVO">
+		update tbl_qna
+		set qna_subject = #{qna_subject},
+			qna_category = #{qna_category},
+		    qna_content = #{qna_content}
+		where qna_id = #{qna_id}
+	</update>
+	
+	<!-- 문의 삭제 -->
+	<delete id="qna_delete" parameterType="int">
+		delete from tbl_qna where qna_id = #{qna_id}
+	</delete>
+	
+	<!-- 문의 삭제시 글 번호 땡김 -->
+	<update id="qna_id_d" parameterType="com.hwig.admin.qna.QnaVO">
+		update tbl_qna set qna_id = qna_id - 1 where qna_id > #{qna_id}
+	</update>
+	
+	<!-- 답변완료 알림 -->
+	<select id="qna_answer" resultType="QnaVO">
+		select q.qna_id as qna_id, r.reply_id as reply_id from tbl_qna q, tbl_reply r
+		where q.qna_id = r.qna_id
+	</select>
+</mapper>
