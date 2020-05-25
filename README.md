@@ -8,9 +8,9 @@
 ### 2. 내가 맡은 역할
  - 팀장
  - 전체적인 DB설계(drwa.io, exerd)
- - 고객페이지 및 관리자페이지 각종 게시판 구현(고객페이지는 Rest API) 
+ - 고객페이지 및 관리자 및 판매자 페이지 각종 게시판 구현(고객페이지는 Rest API) 
  - 고객페이지 로그인 세션관리
- - 관리자페이지 메인화면(차트, 문의목록)
+ - 관리자페이지 및 판매자페이지 메인화면(차트, 문의목록)
  - AWS로 구축된 서버에 프로젝트 배포 및 관리
 ***
 ### 3. 기술스택
@@ -18,13 +18,13 @@
  - JSP
  - Spring Framework
  - DataBase(Oracle)
- - HTML
+ - HTML( ~ JQuery까지 화면구현)
  - CSS
  - Javascript
  - JQuery
- - linux(ubuntu)
- - AWS EC2
+ - linux(ubuntu) -> 서버관리
+ - AWS EC2 -> 서버구축
 ***
 ### 4. 프로젝트 UI(작성중)
-
+ 
 
