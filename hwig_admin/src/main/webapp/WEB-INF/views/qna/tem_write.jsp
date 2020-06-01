@@ -22,7 +22,7 @@
 			frm.qna_category.value = '주문/결제';
 		break;
 		case 3:
-			frm.qna_category.value = '취소/교환/반품';
+			frm.qna_category.value = '취소/교환/환불';
 		break;
 		case 4:
 			frm.qna_category.value = '배송문의';
@@ -98,7 +98,7 @@
 		                                        <option selected value=0>선택</option>
 		                                        <option value=1 id="ct">회원문의</option>
 		                                        <option value=2 id="ct">주문/결제</option>
-		                                        <option value=3 id="ct">취소/교환/반품</option>
+		                                        <option value=3 id="ct">취소/교환/환불</option>
 		                                        <option value=4 id="ct">배송문의</option>
 		                                        <option value=5 id="ct">적립금</option>
 		                                        <option value=6 id="ct">서비스 이용 및 기타</option>

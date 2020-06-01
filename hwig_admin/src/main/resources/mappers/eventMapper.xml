@@ -57,7 +57,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<![CDATA[
 		select event_id, event_subject, event_content, nvl(event_square_img,'empty') as event_square_img
 		from (select * from tbl_event order by event_regdate desc)
-		where rownum <= 3
+		where rownum <= 3 and event_square_img != 'empty'
 		]]>
 	</select>
 

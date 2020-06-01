@@ -84,8 +84,8 @@
 								cellspacing="0" width="100%">
 								<thead>
 									<tr>
-										<th class="col-md-2 text-center"">글 번호</th>
-										<th class="col-md-3 text-center"">카테고리</th>
+										<th class="col-md-2 text-center">글 번호</th>
+										<th class="col-md-3 text-center">카테고리</th>
 										<th class="col-md-7 text-center">제목</th>
 									</tr>
 								</thead>

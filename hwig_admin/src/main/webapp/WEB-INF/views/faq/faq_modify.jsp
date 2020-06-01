@@ -23,7 +23,7 @@
 			frm.faq_category.value = '주문/결제';
 		break;
 		case 3:
-			frm.faq_category.value = '취소/교환/반품';
+			frm.faq_category.value = '취소/교환/환불';
 		break;
 		case 4:
 			frm.faq_category.value = '배송문의';
@@ -102,7 +102,7 @@
 		                                        <option selected value=0>선택</option>
 		                                        <option value=1>회원문의</option>
 		                                        <option value=2>주문/결제</option>
-		                                        <option value=3>취소/교환/반품</option>
+		                                        <option value=3>취소/교환/환불</option>
 		                                        <option value=4>배송문의</option>
 		                                        <option value=5>적립금</option>
 		                                        <option value=6>서비스 이용 및 기타</option>

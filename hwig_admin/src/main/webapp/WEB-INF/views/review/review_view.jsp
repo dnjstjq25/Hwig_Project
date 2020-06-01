@@ -26,7 +26,7 @@
 	                                    <div class="col-md-12">
 	                                        <div class="panel view-mail-body">
 	                                            <div class="panel-body">
-	                                            	<img src="http://13.209.202.242:8080${review_view.review_img}">
+	                                            	<img src="http://13.209.202.242:8080${review_view.review_img}" class="rev_img">
 	                                                <pre style="background-color:white; border:none;">${review_view.review_content}</pre>
 	                                            </div>                              
 	                                        </div>
@@ -45,5 +45,13 @@
             </section>
      </section>
 	<%@ include file="../include/footnav.jsp" %>
+	<script>
+		$(function(){
+			var img = '${review_view.review_img}';
+			if(img == ''){
+				$('.rev_img').remove();
+			}
+		})
+	</script>
 </body>
 </html>
